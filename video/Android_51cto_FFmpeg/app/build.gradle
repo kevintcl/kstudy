@@ -7,7 +7,7 @@ android {
     defaultConfig {
         applicationId "com.cto.tcl.android_51cto_ffmpeg"
         minSdkVersion 21
-        targetSdkVersion 29
+        targetSdkVersion 21
         versionCode 1
         versionName "1.0"
 
@@ -23,6 +23,9 @@ android {
             }
         }
 
+//        ndk {
+//            abiFilters "armeabi-v7a"
+//        }
 
         sourceSets {
             main {
@@ -30,7 +33,12 @@ android {
             }
         }
     }
-
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.10.2"
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -38,12 +46,7 @@ android {
         }
     }
 
-    externalNativeBuild {
-        cmake {
-            path "src/main/cpp/CMakeLists.txt"
-            version "3.10.2"
-        }
-    }
+
 }
 
 dependencies {
