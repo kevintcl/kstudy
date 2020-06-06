@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import com.cto.tcl.android_51cto_ffmpeg.c4decapsulation.Decapsulation;
+
 public class MainActivity extends AppCompatActivity {
 
     // Used to load the 'native-lib' library on application startup.
@@ -21,7 +23,9 @@ public class MainActivity extends AppCompatActivity {
         TextView tv = findViewById(R.id.sample_text);
         tv.setText(stringFromJNI());
 
-        open("/sdcard/videos/0a886809db8a91502eac881d445ba75b.mp4", null);
+        open("/sdcard/videos/1080.mp4", null);
+
+        Decapsulation.open("", null);
     }
 
     /**

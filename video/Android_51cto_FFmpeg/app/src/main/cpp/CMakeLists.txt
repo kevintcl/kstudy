@@ -8,30 +8,40 @@ cmake_minimum_required(VERSION 3.4.1)
 include_directories(include)
 
 set(FF /Users/tangchunlin/study/kstudy/video/Android_51cto_FFmpeg/app/libs/${ANDROID_ABI})
+
 add_library(avcodec SHARED IMPORTED)
 set_target_properties(avcodec PROPERTIES IMPORTED_LOCATION ${FF}/libavcodec.so)
 
+add_library(avformat SHARED IMPORTED)
+set_target_properties(avformat PROPERTIES IMPORTED_LOCATION ${FF}/libavformat.so)
+
+add_library(avutil SHARED IMPORTED)
+set_target_properties(avutil PROPERTIES IMPORTED_LOCATION ${FF}/libavutil.so)
+
 add_library( # Sets the name of the library.
-             native-lib
+        native-lib
 
-             # Sets the library as a shared library.
-             SHARED
+        # Sets the library as a shared library.
+        SHARED
 
-             # Provides a relative path to your source file(s).
-        native-lib.cpp)
+        # Provides a relative path to your source file(s).
+        native-lib.cpp
+        c4/decapsulation.cpp)
 
 
 find_library( # Sets the name of the path variable.
-              log-lib
+        log-lib
 
-              # Specifies the name of the NDK library that
-              # you want CMake to locate.
-              log )
+        # Specifies the name of the NDK library that
+        # you want CMake to locate.
+        log)
 
 
 target_link_libraries( # Specifies the target library.
-                       native-lib
-                        avcodec
-                       # Links the target library to the log library
-                       # included in the NDK.
-                       ${log-lib} )
+        native-lib
+        avcodec
+        avformat
+        avutil
+        # Links the target library to the log library
+        # included in the NDK.
+        ${log-lib})
