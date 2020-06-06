@@ -22,6 +22,9 @@ set_target_properties(avutil PROPERTIES IMPORTED_LOCATION ${FF}/libavutil.so)
 add_library(swscale SHARED IMPORTED)
 set_target_properties(swscale PROPERTIES IMPORTED_LOCATION ${FF}/libswscale.so)
 
+add_library(swresample SHARED IMPORTED)
+set_target_properties(swresample PROPERTIES IMPORTED_LOCATION ${FF}/libswresample.so)
+
 add_library( # Sets the name of the library.
         native-lib
 
@@ -49,6 +52,7 @@ target_link_libraries( # Specifies the target library.
         avformat
         avutil
         swscale
+        swresample
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib})

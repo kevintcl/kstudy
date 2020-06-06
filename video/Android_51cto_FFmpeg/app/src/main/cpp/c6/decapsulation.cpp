@@ -6,6 +6,7 @@
 
 #include <android/log.h>
 
+
 #define LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, "kevint", __VA_ARGS__)
 #define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, "kevint", __VA_ARGS__)
 extern "C" {
@@ -13,6 +14,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/jni.h>
 #include <libswscale/swscale.h>
+#include <libswresample/swresample.h>
 }
 
 void open(char *url);
@@ -62,7 +64,8 @@ void open(char *url) {
     avcodec_register_all();
     //3.打开文件
     AVFormatContext *ic = NULL;
-    char path[] = "/sdcard/videos/0a886809db8a91502eac881d445ba75b.mp4";//1080.mp4
+//    char path[] = "/sdcard/videos/0a886809db8a91502eac881d445ba75b.mp4";//1080.mp4
+    char path[] = "/sdcard/videos/1080.mp4";//1080.mp4
     int re = avformat_open_input(&ic, path, 0, 0);
 
 
@@ -175,6 +178,27 @@ void open(char *url) {
     SwsContext *vctx = NULL;
     char *rgbBuf = new char[1920 * 1080 * 4];
 
+    char *pcm = new char[48000 * 4 * 2];
+
+    //音频重采样上下文初始化
+    SwrContext *actx = swr_alloc();
+    actx = swr_alloc_set_opts(actx,
+                              av_get_default_channel_layout(2),
+                              AV_SAMPLE_FMT_S16, //非平面格式
+                              ac->sample_rate,
+                              av_get_default_channel_layout(ac->channels),
+                              ac->sample_fmt,
+                              ac->sample_rate,
+                              0, 0);
+    re = swr_init(actx);
+
+    if (re != 0) {
+        LOGE("swr_init Failed!");
+        return;
+    } else {
+        LOGE("swr_init Success!");
+    }
+
     for (;;) {
         //超过3s
         if (getNowMs() - start >= 1000) {
@@ -204,7 +228,6 @@ void open(char *url) {
             LOGD("avcodec_send_packet failed!");
             continue;
         }
-
 
 
         for (;;) {
@@ -252,6 +275,16 @@ void open(char *url) {
 
 
                 }
+            } else {//音频
+                //音频重采样
+                uint8_t *out[2] = {0};
+                out[0] = (uint8_t *) pcm;
+                int len = swr_convert(actx,
+                                      out,
+                                      frame->nb_samples,
+                                      (const uint8_t **) frame->data,
+                                      frame->nb_samples);
+                LOGD("swr_convert==%d", len);
             }
         }
 
@@ -259,7 +292,37 @@ void open(char *url) {
     }
 
     delete rgbBuf;
+    delete pcm;
     avformat_close_input(&ic);
+
+}
+
+void use() {
+    /** 音频
+    struct SwrContext *swr_alloc(void);
+
+    struct SwrContext *swr_alloc_set_opts(
+            struct SwrContext *s,
+            int64_t out_ch_layout,
+            enum AVSampleFormat out_sample_fmt,
+            int out_sample_rate,
+            int64_t in_ch_layout,
+            enum AVSampleFormat in_sample_fmt,
+            int in_sample_rate,
+            int log_offset,
+            void *log_ctx);
+    int swr_init(struct SwrContext *s);
+    void swr_free(struct SwrContext **s);
+
+
+    int swr_convert(struct SwrContext *s,
+                    uint8_t **out,
+                    int out_count,
+                    const uint8_t **in,
+                    int in_count //nbsamples 单通道样本数量，双通道要 x2
+                    );
+
+    **/
 
 }
 
