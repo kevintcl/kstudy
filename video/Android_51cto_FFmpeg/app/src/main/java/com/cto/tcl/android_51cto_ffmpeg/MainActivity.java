@@ -2,10 +2,14 @@ package com.cto.tcl.android_51cto_ffmpeg;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.cto.tcl.android_51cto_ffmpeg.c4decapsulation.Decapsulation;
+import com.cto.tcl.android_51cto_ffmpeg.c6.XPlay;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -17,15 +21,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
         setContentView(R.layout.activity_main);
+//        XPlay xPlay = new XPlay(this);
+//        setContentView(xPlay);
 
-        // Example of a call to a native method
-        TextView tv = findViewById(R.id.sample_text);
-        tv.setText(stringFromJNI());
-
-        open("/sdcard/videos/1080.mp4", null);
-
-        Decapsulation.open("", null);
     }
 
     /**
@@ -34,5 +38,4 @@ public class MainActivity extends AppCompatActivity {
      */
     public native String stringFromJNI();
 
-    public native void open(String url, Object handle);
 }

@@ -34,4 +34,3 @@ Java_com_cto_tcl_android_151cto_1ffmpeg_MainActivity_open(JNIEnv *env, jobject t
     }
     env->ReleaseStringUTFChars(jurl, url);
 }
-

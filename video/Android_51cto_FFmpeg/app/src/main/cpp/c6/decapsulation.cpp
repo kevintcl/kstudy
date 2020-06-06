@@ -5,6 +5,8 @@
 #include <string>
 
 #include <android/log.h>
+#include <android/native_window.h>
+#include <android/native_window_jni.h>
 
 
 #define LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, "kevint", __VA_ARGS__)
@@ -17,25 +19,6 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-void open(char *url);
-
-extern "C"
-JNIEXPORT jboolean JNICALL
-Java_com_cto_tcl_android_151cto_1ffmpeg_c4decapsulation_Decapsulation_open(JNIEnv *env,
-                                                                           jclass clazz,
-                                                                           jstring url,
-                                                                           jobject handle) {
-    open("");
-    return true;
-}
-
-extern "C"
-JNIEXPORT
-jint JNI_OnLoad(JavaVM *vm, void *res) {
-    av_jni_set_java_vm(vm, 0);
-    LOGD("=========JNI_OnLoad=====");
-    return JNI_VERSION_1_4;
-}
 
 static double r2d(AVRational r) {
     return r.num == 0 || r.den == 0 ? 0 : (double) r.num / (double) r.den;
@@ -51,7 +34,31 @@ long long getNowMs() {
     return t;
 }
 
-void open(char *url) {
+extern "C"
+JNIEXPORT
+jint JNI_OnLoad(JavaVM *vm, void *res) {
+    av_jni_set_java_vm(vm, 0);
+    LOGD("=========JNI_OnLoad=====");
+    return JNI_VERSION_1_4;
+}
+
+void open(const char *url, ANativeWindow *nWin);
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_cto_tcl_android_151cto_1ffmpeg_c6_XPlay_open(JNIEnv *env, jobject thiz, jstring url,
+                                                      jobject surface) {
+    const char *path = env->GetStringUTFChars(url, 0);
+    //显示窗口初始化
+
+    ANativeWindow *nWin = ANativeWindow_fromSurface(env, surface);
+    open(path, nWin);
+
+    env->ReleaseStringUTFChars(url, path);
+}
+
+
+void open(const char *url, ANativeWindow *nWin) {
     //1.初始化解封装
     av_register_all();
 
@@ -120,10 +127,10 @@ void open(char *url) {
 
 
     //软件解码器
-//    AVCodec *codec = avcodec_find_decoder(ic->streams[videoStream]->codecpar->codec_id);
+    AVCodec *codec = avcodec_find_decoder(ic->streams[videoStream]->codecpar->codec_id);
 
     //硬解码
-    AVCodec *codec = avcodec_find_decoder_by_name("h264_mediacodec");
+//    AVCodec *codec = avcodec_find_decoder_by_name("h264_mediacodec");
 
     if (!codec) {
         LOGD("avcodec_find_decode video error!");
@@ -133,7 +140,7 @@ void open(char *url) {
     //解码器初始化
     AVCodecContext *vc = avcodec_alloc_context3(codec);
     avcodec_parameters_to_context(vc, ic->streams[videoStream]->codecpar);
-    vc->thread_count = 1;
+    vc->thread_count = 4;
 
     //打开视频解码器
     re = avcodec_open2(vc, 0, 0);
@@ -152,7 +159,7 @@ void open(char *url) {
     //打开音频解码器
     AVCodecContext *ac = avcodec_alloc_context3(acodec);
     avcodec_parameters_to_context(ac, ic->streams[audioSteam]->codecpar);
-    ac->thread_count = 1;
+    ac->thread_count = 4;
     //#####################################################3
     //打开音频解码器
     re = avcodec_open2(ac, 0, 0);
@@ -170,7 +177,7 @@ void open(char *url) {
     int frame_count = 0;
 
     AVFrame *frame = av_frame_alloc();
-    int outWidth = 1080;
+    int outWidth = 1280;
     int outHeight = 720;
 
 
@@ -198,6 +205,21 @@ void open(char *url) {
     } else {
         LOGE("swr_init Success!");
     }
+
+
+    //显示窗口初始化
+    int videoWidth = vc->width;
+    int videoHeight = vc->height;
+
+    ANativeWindow_setBuffersGeometry(
+            nWin,
+            outWidth,
+            outHeight,
+            WINDOW_FORMAT_RGBA_8888
+    );
+
+    ANativeWindow_Buffer wBuf;
+
 
     for (;;) {
         //超过3s
@@ -265,7 +287,7 @@ void open(char *url) {
                     int lines[AV_NUM_DATA_POINTERS] = {0};
                     lines[0] = outWidth * 4;//RGBA
                     int h = sws_scale(vctx,
-                                      frame->data,
+                                      (const uint8_t **)frame->data,
                                       frame->linesize,
                                       0,
                                       frame->height,
@@ -273,7 +295,17 @@ void open(char *url) {
                                       lines);
                     LOGD("sws_scale==%d", h);
 
+                    if (h > 0) {
+                        ANativeWindow_lock(
+                                nWin,
+                                &wBuf,
+                                0//全部取
+                        );
+                        uint8_t *dst = (uint8_t *) wBuf.bits;
+                        memcpy(dst, rgbBuf, outWidth * outHeight * 4);//4 表示4个字节
+                        ANativeWindow_unlockAndPost(nWin);
 
+                    }
                 }
             } else {//音频
                 //音频重采样
