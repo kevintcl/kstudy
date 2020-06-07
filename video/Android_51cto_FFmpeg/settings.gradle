@@ -1,2 +1,3 @@
+include ':testopensl'
 rootProject.name='Android_51cto_FFmpeg'
 include ':app'
