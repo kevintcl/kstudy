@@ -11,4 +11,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
     }
+
+    static {
+        System.loadLibrary("native-lib");
+    }
+
+    public native String invokeFromJava(String url);
 }
